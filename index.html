@@ -47,7 +47,11 @@
     };
 
     function formatMorse(raw) {
-      return raw.split('').map(s => s === '.' ? '•' : '—').join(' ');
+      return raw.split('').map(s => {
+        if (s === '.') return '•';
+        if (s === '-') return '—';
+        throw new Error('formatMorse: unexpected character: ' + s);
+      }).join(' ');
     }
 
     // --- TESTS (remove before shipping) ---
@@ -59,6 +63,15 @@
       console.assert(formatMorse('.----') === '• — — — —', '1 → correct display');
       console.assert(MORSE['5'] === '.....', 'MORSE[5] is correct');
       console.assert(MORSE['0'] === '-----', 'MORSE[0] is correct');
+      console.assert(MORSE['1'] === '.----', 'MORSE[1]');
+      console.assert(MORSE['2'] === '..---', 'MORSE[2]');
+      console.assert(MORSE['3'] === '...--', 'MORSE[3]');
+      console.assert(MORSE['4'] === '....-', 'MORSE[4]');
+      console.assert(MORSE['6'] === '-....', 'MORSE[6]');
+      console.assert(MORSE['7'] === '--...', 'MORSE[7]');
+      console.assert(MORSE['8'] === '---..',  'MORSE[8]');
+      console.assert(MORSE['9'] === '----.', 'MORSE[9]');
+      console.assert(formatMorse(MORSE['2']) === '• • — — —', 'MORSE[2] round-trips');
       console.log('Tests complete — check for assertion errors above');
     }
 
