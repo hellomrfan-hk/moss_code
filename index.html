@@ -39,6 +39,30 @@
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById('screen-' + id).classList.add('active');
     }
+
+    // === MORSE DATA ===
+    const MORSE = {
+      '0': '-----', '1': '.----', '2': '..---', '3': '...--', '4': '....-',
+      '5': '.....', '6': '-....', '7': '--...', '8': '---..',  '9': '----.'
+    };
+
+    function formatMorse(raw) {
+      return raw.split('').map(s => s === '.' ? '•' : '—').join(' ');
+    }
+
+    // --- TESTS (remove before shipping) ---
+    function runTests() {
+      console.assert(formatMorse('.') === '•', 'dot → bullet');
+      console.assert(formatMorse('-') === '—', 'dash → em dash');
+      console.assert(formatMorse('..---') === '• • — — —', '2 → correct display');
+      console.assert(formatMorse('-----') === '— — — — —', '0 → correct display');
+      console.assert(formatMorse('.----') === '• — — — —', '1 → correct display');
+      console.assert(MORSE['5'] === '.....', 'MORSE[5] is correct');
+      console.assert(MORSE['0'] === '-----', 'MORSE[0] is correct');
+      console.log('Tests complete — check for assertion errors above');
+    }
+
+    runTests();
   </script>
 </body>
 </html>
