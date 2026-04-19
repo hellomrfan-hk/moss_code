@@ -307,6 +307,9 @@
     let gameState = null;
 
     function startGame(seconds, mode) {
+      if (gameState && gameState.timerInterval) {
+        clearInterval(gameState.timerInterval);
+      }
       const weakDigits = loadWeakDigits();
       gameState = {
         seconds,
