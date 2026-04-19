@@ -117,6 +117,24 @@
     fieldset label input[type="radio"] { accent-color: var(--accent); }
     .mode-desc { color: var(--ink-muted); font-size: 0.82rem; }
 
+    .theme-options { display: flex; flex-direction: column; gap: 8px; }
+    .theme-option {
+      display: flex; align-items: center; gap: 12px;
+      background: transparent; border: 2px solid transparent;
+      border-radius: var(--radius-field); padding: 10px 12px; cursor: pointer;
+      text-align: left; width: 100%;
+      transition: border-color 0.15s;
+    }
+    .theme-option:hover { border-color: var(--accent); }
+    .theme-option.active { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 10%, transparent); }
+    .theme-swatch { width: 36px; height: 36px; border-radius: var(--radius-chip); flex-shrink: 0; }
+    .swatch-default { background: linear-gradient(135deg, #e8f4fd 50%, #4dabf7 50%); }
+    .swatch-chess   { background: linear-gradient(135deg, #f0d9b5 50%, #b58863 50%); }
+    .swatch-craft   { background: linear-gradient(135deg, #86b24a 50%, #4a7c21 50%); }
+    .theme-option-text { display: flex; flex-direction: column; }
+    .theme-option-text strong { font-size: 0.9rem; color: var(--ink); }
+    .theme-option-text small  { font-size: 0.78rem; color: var(--ink-muted); }
+
     .btn-primary {
       width: 100%;
       padding: 14px;
@@ -813,6 +831,45 @@
         </label>
       </fieldset>
 
+      <fieldset>
+        <legend>Display</legend>
+        <label>
+          <input type="radio" name="display" value="visual" checked> Visual &amp; Audio
+          <span class="mode-desc">See and hear the Morse pattern</span>
+        </label>
+        <label>
+          <input type="radio" name="display" value="audio"> Audio Only
+          <span class="mode-desc">Listen — no visual hint</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Theme</legend>
+        <div class="theme-options">
+          <button type="button" class="theme-option active" data-theme="default">
+            <span class="theme-swatch swatch-default"></span>
+            <span class="theme-option-text">
+              <strong>Default</strong>
+              <small>Clean &amp; friendly</small>
+            </span>
+          </button>
+          <button type="button" class="theme-option" data-theme="chess">
+            <span class="theme-swatch swatch-chess"></span>
+            <span class="theme-option-text">
+              <strong>Chess</strong>
+              <small>Tournament wood</small>
+            </span>
+          </button>
+          <button type="button" class="theme-option" data-theme="craft">
+            <span class="theme-swatch swatch-craft"></span>
+            <span class="theme-option-text">
+              <strong>Blockcraft</strong>
+              <small>Stylized blocks</small>
+            </span>
+          </button>
+        </div>
+      </fieldset>
+
       <button id="start-btn" class="btn-primary">Start</button>
     </div>
   </div>
@@ -934,8 +991,11 @@
         }
       }
 
-      // update active marker
+      // update active marker in tweaks panel and setup screen
       document.querySelectorAll('#tweaks-panel .tw-opt').forEach(el => {
+        el.classList.toggle('active', el.dataset.theme === theme);
+      });
+      document.querySelectorAll('.theme-option[data-theme]').forEach(el => {
         el.classList.toggle('active', el.dataset.theme === theme);
       });
 
@@ -1111,7 +1171,8 @@
     document.getElementById('start-btn').addEventListener('click', () => {
       const seconds = parseInt(document.querySelector('input[name="timer"]:checked').value, 10);
       const mode = document.querySelector('input[name="mode"]:checked').value;
-      startGame(seconds, mode);
+      const displayMode = document.querySelector('input[name="display"]:checked').value;
+      startGame(seconds, mode, displayMode);
     });
 
     document.addEventListener('keydown', e => {
@@ -1125,16 +1186,20 @@
       showScreen('setup');
     });
 
+    document.querySelectorAll('.theme-option[data-theme]').forEach(btn => {
+      btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+    });
+
     initSetup();
 
     // --- GAME ---
     let gameState = null;
 
-    function startGame(seconds, mode) {
+    function startGame(seconds, mode, displayMode) {
       if (gameState && gameState.timerInterval) clearInterval(gameState.timerInterval);
       const weakDigits = loadWeakDigits();
       gameState = {
-        seconds, mode, weakDigits,
+        seconds, mode, displayMode, weakDigits,
         timeLeft: seconds,
         score: 0,
         attempts: 0,
@@ -1227,19 +1292,21 @@
       gameState.inputEnabled = false;
 
       const raw = MORSE[String(digit)];
+      const audioOnly = gameState.displayMode === 'audio';
       document.getElementById('input-box').textContent = '_';
       const display = document.getElementById('morse-display');
       display.innerHTML = '';
       display.textContent = '';
+      display.style.visibility = audioOnly ? 'hidden' : '';
 
       if (gameState.mode === 'beginner') {
-        renderMorse(display, raw);
+        if (!audioOnly) renderMorse(display, raw);
         currentMorse = scheduleMorse(raw, null);
         gameState.inputEnabled = true;
       } else {
         const symbols = raw.split('');
         currentMorse = scheduleMorse(raw, index => {
-          renderMorseUpto(display, raw, index);
+          if (!audioOnly) renderMorseUpto(display, raw, index);
           if (index === symbols.length - 1) gameState.inputEnabled = true;
         });
       }
