@@ -54,6 +54,52 @@
       }).join(' ');
     }
 
+    // === AUDIO ENGINE ===
+    let audioCtx = null;
+
+    function getAudioCtx() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioCtx;
+    }
+
+    function scheduleBeep(ctx, startTime, durationSec, freq = 600) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.3, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + durationSec);
+      osc.start(startTime);
+      osc.stop(startTime + durationSec + 0.02);
+    }
+
+    // Plays raw morse string (e.g. '..---').
+    // Calls onSymbol(index) at the moment each symbol plays.
+    // Returns total duration in milliseconds.
+    function scheduleMorse(raw, onSymbol) {
+      const ctx = getAudioCtx();
+      const DOT_SEC = 0.1, DASH_SEC = 0.3, GAP_SEC = 0.1;
+      let t = ctx.currentTime + 0.05;
+      let elapsedMs = 50;
+
+      raw.split('').forEach((sym, i) => {
+        const durSec = sym === '.' ? DOT_SEC : DASH_SEC;
+        scheduleBeep(ctx, t, durSec);
+        if (onSymbol) {
+          const ms = elapsedMs;
+          setTimeout(() => onSymbol(i), ms);
+        }
+        elapsedMs += (durSec + GAP_SEC) * 1000;
+        t += durSec + GAP_SEC;
+      });
+
+      return elapsedMs;
+    }
+
     // --- TESTS (remove before shipping) ---
     function runTests() {
       console.assert(formatMorse('.') === '•', 'dot → bullet');
