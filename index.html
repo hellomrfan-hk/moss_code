@@ -334,7 +334,7 @@
     });
 
     document.addEventListener('keydown', e => {
-      if (e.key >= '0' && e.key <= '9') {
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key >= '0' && e.key <= '9') {
         handleAnswer(parseInt(e.key, 10));
       }
     });
@@ -393,6 +393,7 @@
     }
 
     let currentMorse = null; // tracks in-flight scheduleMorse handle for cancellation
+    let flashTimeout = null; // tracks handleAnswer's flash setTimeout for cancellation
 
     function loadNextDigit() {
       if (currentMorse) {
@@ -440,7 +441,8 @@
 
       document.getElementById('score-display').textContent = gameState.score;
 
-      setTimeout(() => {
+      flashTimeout = setTimeout(() => {
+        flashTimeout = null;
         card.classList.remove('flash-correct', 'flash-wrong');
         loadNextDigit();
       }, 400);
@@ -471,7 +473,7 @@
       const poolResults = Array.from({length: 200}, () => pickDigit([]));
       console.assert(poolResults.every(d => d >= 0 && d <= 9), 'pickDigit range');
 
-      // pickDigit: weak digit appears more often (2x weight, out of 12 total = ~16.7%)
+      // pickDigit: weak digit appears more often (2x weight, 11 slots total = ~18.2%)
       const weakResults = Array.from({length: 500}, () => pickDigit([3]));
       const countThree = weakResults.filter(d => d === 3).length;
       console.assert(countThree > 55, 'weak digit 3 appears more often: ' + countThree);
