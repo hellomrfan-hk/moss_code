@@ -186,14 +186,21 @@
     function loadWeakDigits() {
       try {
         return JSON.parse(localStorage.getItem('morseWeakDigits') || '{}').weakDigits || [];
-      } catch { return []; }
+      } catch (e) {
+        console.warn('loadWeakDigits: could not parse localStorage, resetting', e);
+        return [];
+      }
     }
 
     function saveWeakDigits(weakDigits) {
-      localStorage.setItem('morseWeakDigits', JSON.stringify({
-        weakDigits,
-        lastUpdated: new Date().toISOString().slice(0, 10)
-      }));
+      try {
+        localStorage.setItem('morseWeakDigits', JSON.stringify({
+          weakDigits,
+          lastUpdated: new Date().toISOString().slice(0, 10)
+        }));
+      } catch (e) {
+        console.warn('saveWeakDigits: could not persist to localStorage', e);
+      }
     }
 
     function initSetup() {
@@ -208,7 +215,7 @@
     }
 
     document.getElementById('start-btn').addEventListener('click', () => {
-      const seconds = parseInt(document.querySelector('input[name="timer"]:checked').value);
+      const seconds = parseInt(document.querySelector('input[name="timer"]:checked').value, 10);
       const mode = document.querySelector('input[name="mode"]:checked').value;
       startGame(seconds, mode); // defined in Task 5
     });
