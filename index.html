@@ -139,6 +139,36 @@
       border-radius: 4px;
       transition: width 0.5s linear, background 0.5s;
     }
+
+    h2 { font-size: 1.3rem; color: #212529; margin-bottom: 20px; }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+      font-size: 0.95rem;
+    }
+    .results-table th, .results-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #dee2e6;
+      text-align: left;
+    }
+    .results-table th { color: #868e96; font-weight: 600; font-size: 0.82rem; text-transform: uppercase; }
+    .morse-cell { font-family: 'Courier New', Courier, monospace; color: #495057; }
+
+    button#play-again-btn {
+      width: 100%;
+      padding: 14px;
+      background: #4dabf7;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button#play-again-btn:hover { background: #339af0; }
   </style>
 </head>
 <body>
@@ -190,7 +220,18 @@
   </div>
 
   <div id="screen-results" class="screen">
-    <p>Results screen placeholder</p>
+    <div class="setup-card">
+      <h2 id="result-headline">12 correct out of 18 attempts</h2>
+
+      <table class="results-table">
+        <thead>
+          <tr><th>Digit</th><th>Morse</th><th>Result</th></tr>
+        </thead>
+        <tbody id="results-tbody"></tbody>
+      </table>
+
+      <button id="play-again-btn">Play Again</button>
+    </div>
   </div>
 
   <script>
@@ -339,6 +380,11 @@
       }
     });
 
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+      initSetup();
+      showScreen('setup');
+    });
+
     initSetup();
 
     // === GAME STATE ===
@@ -395,6 +441,33 @@
     let currentMorse = null; // tracks in-flight scheduleMorse handle for cancellation
     let flashTimeout = null; // tracks handleAnswer's flash setTimeout for cancellation
 
+    function endGame() {
+      // Clean up in-flight state
+      if (flashTimeout) { clearTimeout(flashTimeout); flashTimeout = null; }
+      if (currentMorse) { currentMorse.cancel(); currentMorse = null; }
+      gameState.inputEnabled = false;
+
+      const newWeak = updateWeakDigits(gameState.sessionStats, gameState.weakDigits);
+      saveWeakDigits(newWeak);
+
+      document.getElementById('result-headline').textContent =
+        gameState.score + ' correct out of ' + gameState.attempts + ' attempts';
+
+      const tbody = document.getElementById('results-tbody');
+      tbody.innerHTML = '';
+      for (let d = 0; d <= 9; d++) {
+        const s = gameState.sessionStats[d];
+        if (s.attempts === 0) continue;
+        const pct = s.correct / s.attempts;
+        const icon = pct === 1 ? '✓' : pct === 0 ? '✗' : '~';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${d}</td><td class="morse-cell">${MORSE[d]}</td><td>${s.correct}/${s.attempts} ${icon}</td>`;
+        tbody.appendChild(tr);
+      }
+
+      showScreen('results');
+    }
+
     function loadNextDigit() {
       if (currentMorse) {
         currentMorse.cancel();
@@ -414,10 +487,19 @@
         currentMorse = scheduleMorse(raw, null);
         gameState.inputEnabled = true;
       } else {
-        // Advanced mode — implemented in Task 7; fall back to beginner for now
-        document.getElementById('morse-display').textContent = formatMorse(raw);
-        currentMorse = scheduleMorse(raw, null);
-        gameState.inputEnabled = true;
+        // Advanced: animate symbols one by one in sync with audio
+        const symbols = raw.split('');
+        const display = document.getElementById('morse-display');
+
+        currentMorse = scheduleMorse(raw, index => {
+          display.textContent = symbols
+            .slice(0, index + 1)
+            .map(s => s === '.' ? '•' : '—')
+            .join(' ');
+          if (index === symbols.length - 1) {
+            gameState.inputEnabled = true;
+          }
+        });
       }
     }
 
