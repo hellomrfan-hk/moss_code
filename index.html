@@ -58,7 +58,7 @@
     }
     .mode-desc { color: #868e96; font-size: 0.82rem; }
 
-    button#start-btn {
+    .btn-primary {
       width: 100%;
       padding: 14px;
       background: #4dabf7;
@@ -70,7 +70,7 @@
       cursor: pointer;
       transition: background 0.15s;
     }
-    button#start-btn:hover { background: #339af0; }
+    .btn-primary:hover { background: #339af0; }
 
     .game-header {
       display: flex;
@@ -156,19 +156,11 @@
     .results-table th { color: #868e96; font-weight: 600; font-size: 0.82rem; text-transform: uppercase; }
     .morse-cell { font-family: 'Courier New', Courier, monospace; color: #495057; }
 
-    button#play-again-btn {
-      width: 100%;
-      padding: 14px;
-      background: #4dabf7;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s;
+    @media (max-width: 400px) {
+      .screen { padding: 16px; }
+      .setup-card, .game-card { padding: 24px 18px; }
+      .morse-display { font-size: 1.5rem; }
     }
-    button#play-again-btn:hover { background: #339af0; }
   </style>
 </head>
 <body>
@@ -198,7 +190,7 @@
         </label>
       </fieldset>
 
-      <button id="start-btn">Start</button>
+      <button id="start-btn" class="btn-primary">Start</button>
     </div>
   </div>
 
@@ -230,7 +222,7 @@
         <tbody id="results-tbody"></tbody>
       </table>
 
-      <button id="play-again-btn">Play Again</button>
+      <button id="play-again-btn" class="btn-primary">Play Again</button>
     </div>
   </div>
 
@@ -533,60 +525,6 @@
       }, 400);
     }
 
-    // --- TESTS (remove before shipping) ---
-    function runTests() {
-      console.assert(formatMorse('.') === '•', 'dot → bullet');
-      console.assert(formatMorse('-') === '—', 'dash → em dash');
-      console.assert(formatMorse('..---') === '• • — — —', '2 → correct display');
-      console.assert(formatMorse('-----') === '— — — — —', '0 → correct display');
-      console.assert(formatMorse('.----') === '• — — — —', '1 → correct display');
-      console.assert(MORSE['5'] === '.....', 'MORSE[5] is correct');
-      console.assert(MORSE['0'] === '-----', 'MORSE[0] is correct');
-      console.assert(MORSE['1'] === '.----', 'MORSE[1]');
-      console.assert(MORSE['2'] === '..---', 'MORSE[2]');
-      console.assert(MORSE['3'] === '...--', 'MORSE[3]');
-      console.assert(MORSE['4'] === '....-', 'MORSE[4]');
-      console.assert(MORSE['6'] === '-....', 'MORSE[6]');
-      console.assert(MORSE['7'] === '--...', 'MORSE[7]');
-      console.assert(MORSE['8'] === '---..',  'MORSE[8]');
-      console.assert(MORSE['9'] === '----.', 'MORSE[9]');
-      console.assert(formatMorse(MORSE['2']) === '• • — — —', 'MORSE[2] round-trips');
-      let threw = false;
-      try { formatMorse('x'); } catch(e) { threw = true; }
-      console.assert(threw, 'formatMorse throws on unexpected char');
-      // pickDigit: all results in range 0-9
-      const poolResults = Array.from({length: 200}, () => pickDigit([]));
-      console.assert(poolResults.every(d => d >= 0 && d <= 9), 'pickDigit range');
-
-      // pickDigit: weak digit appears more often (2x weight, 11 slots total = ~18.2%)
-      const weakResults = Array.from({length: 500}, () => pickDigit([3]));
-      const countThree = weakResults.filter(d => d === 3).length;
-      console.assert(countThree > 55, 'weak digit 3 appears more often: ' + countThree);
-
-      // updateWeakDigits: < 50% correct → marked weak
-      const stats1 = Object.fromEntries(Array.from({length:10}, (_, i) => [i, {attempts:0, correct:0}]));
-      stats1[2] = {attempts: 4, correct: 1};
-      const w1 = updateWeakDigits(stats1, []);
-      console.assert(w1.includes(2), 'digit 2 should be weak (1/4 correct)');
-
-      // updateWeakDigits: >= 80% correct → removed from weak
-      const stats2 = Object.fromEntries(Array.from({length:10}, (_, i) => [i, {attempts:0, correct:0}]));
-      stats2[2] = {attempts: 5, correct: 4};
-      const w2 = updateWeakDigits(stats2, [2]);
-      console.assert(!w2.includes(2), 'digit 2 should no longer be weak (4/5 correct)');
-
-      // updateWeakDigits: 50-79% correct → keep existing status (neither add nor remove)
-      const stats3 = Object.fromEntries(Array.from({length:10}, (_, i) => [i, {attempts:0, correct:0}]));
-      stats3[5] = {attempts: 3, correct: 2}; // 67% — not weak, not removed
-      const w3a = updateWeakDigits(stats3, []);   // was not weak → stays not weak
-      const w3b = updateWeakDigits(stats3, [5]);  // was weak → stays weak
-      console.assert(!w3a.includes(5), 'digit 5 at 67%: not added when not already weak');
-      console.assert(w3b.includes(5), 'digit 5 at 67%: kept when already weak');
-
-      console.log('Tests complete — check for assertion errors above');
-    }
-
-    runTests();
   </script>
 </body>
 </html>
