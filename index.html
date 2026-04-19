@@ -61,6 +61,9 @@
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
       return audioCtx;
     }
 
@@ -71,7 +74,8 @@
       gain.connect(ctx.destination);
       osc.type = 'sine';
       osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.3, startTime);
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.3, startTime + 0.005);
       gain.gain.exponentialRampToValueAtTime(0.001, startTime + durationSec);
       osc.start(startTime);
       osc.stop(startTime + durationSec + 0.02);
@@ -87,11 +91,11 @@
       let elapsedMs = 50;
 
       raw.split('').forEach((sym, i) => {
+        if (sym !== '.' && sym !== '-') throw new Error('scheduleMorse: unexpected character: ' + sym);
         const durSec = sym === '.' ? DOT_SEC : DASH_SEC;
         scheduleBeep(ctx, t, durSec);
         if (onSymbol) {
-          const ms = elapsedMs;
-          setTimeout(() => onSymbol(i), ms);
+          setTimeout(() => onSymbol(i), elapsedMs);
         }
         elapsedMs += (durSec + GAP_SEC) * 1000;
         t += durSec + GAP_SEC;
