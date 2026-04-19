@@ -238,29 +238,39 @@
       gain.gain.exponentialRampToValueAtTime(0.001, startTime + durationSec);
       osc.start(startTime);
       osc.stop(startTime + durationSec + 0.02);
+      return osc;
     }
 
     // Plays raw morse string (e.g. '..---').
     // Calls onSymbol(index) at the moment each symbol plays.
-    // Returns total duration in milliseconds.
+    // Returns { cancel(), durationMs } — call cancel() to stop audio and clear pending callbacks.
     function scheduleMorse(raw, onSymbol) {
       const ctx = getAudioCtx();
       const DOT_SEC = 0.1, DASH_SEC = 0.3, GAP_SEC = 0.1;
       let t = ctx.currentTime + 0.05;
       let elapsedMs = 50;
+      const timers = [];
+      const oscillators = [];
 
       raw.split('').forEach((sym, i) => {
         if (sym !== '.' && sym !== '-') throw new Error('scheduleMorse: unexpected character: ' + sym);
         const durSec = sym === '.' ? DOT_SEC : DASH_SEC;
-        scheduleBeep(ctx, t, durSec);
+        const osc = scheduleBeep(ctx, t, durSec);
+        oscillators.push(osc);
         if (onSymbol) {
-          setTimeout(() => onSymbol(i), elapsedMs);
+          timers.push(setTimeout(() => onSymbol(i), elapsedMs));
         }
         elapsedMs += (durSec + GAP_SEC) * 1000;
         t += durSec + GAP_SEC;
       });
 
-      return elapsedMs;
+      return {
+        cancel() {
+          timers.forEach(clearTimeout);
+          oscillators.forEach(o => { try { o.stop(); } catch(_) {} });
+        },
+        durationMs: elapsedMs
+      };
     }
 
     // === SETUP ===
@@ -284,6 +294,28 @@
       }
     }
 
+    function pickDigit(weakDigits) {
+      const pool = [];
+      for (let d = 0; d <= 9; d++) {
+        pool.push(d);
+        if (weakDigits.includes(d)) pool.push(d); // 2x weight for weak digits
+      }
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function updateWeakDigits(sessionStats, currentWeak) {
+      const newWeak = new Set(currentWeak);
+      for (const [digit, stats] of Object.entries(sessionStats)) {
+        if (stats.attempts === 0) continue;
+        const d = parseInt(digit, 10);
+        const ratio = stats.correct / stats.attempts;
+        if (ratio < 0.5)       newWeak.add(d);
+        else if (ratio >= 0.8) newWeak.delete(d);
+        // 0.5–0.79: keep existing status (no change)
+      }
+      return [...newWeak];
+    }
+
     function initSetup() {
       const weak = loadWeakDigits();
       const el = document.getElementById('practice-focus');
@@ -299,6 +331,12 @@
       const seconds = parseInt(document.querySelector('input[name="timer"]:checked').value, 10);
       const mode = document.querySelector('input[name="mode"]:checked').value;
       startGame(seconds, mode); // defined in Task 5
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key >= '0' && e.key <= '9') {
+        handleAnswer(parseInt(e.key, 10));
+      }
     });
 
     initSetup();
@@ -354,10 +392,58 @@
       else                 bar.style.background = '#ff6b6b';
     }
 
+    let currentMorse = null; // tracks in-flight scheduleMorse handle for cancellation
+
     function loadNextDigit() {
-      // stub — replaced in Task 6
-      document.getElementById('morse-display').textContent = '• • — — —';
-      gameState.inputEnabled = true;
+      if (currentMorse) {
+        currentMorse.cancel();
+        currentMorse = null;
+      }
+
+      const digit = pickDigit(gameState.weakDigits);
+      gameState.currentDigit = digit;
+      gameState.inputEnabled = false;
+
+      const raw = MORSE[String(digit)];
+      document.getElementById('input-box').textContent = '_';
+      document.getElementById('morse-display').textContent = '';
+
+      if (gameState.mode === 'beginner') {
+        document.getElementById('morse-display').textContent = formatMorse(raw);
+        currentMorse = scheduleMorse(raw, null);
+        gameState.inputEnabled = true;
+      } else {
+        // Advanced mode — implemented in Task 7; fall back to beginner for now
+        document.getElementById('morse-display').textContent = formatMorse(raw);
+        currentMorse = scheduleMorse(raw, null);
+        gameState.inputEnabled = true;
+      }
+    }
+
+    function handleAnswer(pressedDigit) {
+      if (!gameState || !gameState.inputEnabled) return;
+      gameState.inputEnabled = false;
+
+      const correct = pressedDigit === gameState.currentDigit;
+      document.getElementById('input-box').textContent = String(pressedDigit);
+      gameState.attempts++;
+      gameState.sessionStats[gameState.currentDigit].attempts++;
+
+      const card = document.getElementById('game-card');
+      if (correct) {
+        gameState.score++;
+        gameState.sessionStats[gameState.currentDigit].correct++;
+        card.classList.add('flash-correct');
+      } else {
+        card.classList.add('flash-wrong');
+      }
+
+      document.getElementById('score-display').textContent = gameState.score;
+
+      setTimeout(() => {
+        card.classList.remove('flash-correct', 'flash-wrong');
+        loadNextDigit();
+      }, 400);
     }
 
     // --- TESTS (remove before shipping) ---
@@ -381,6 +467,35 @@
       let threw = false;
       try { formatMorse('x'); } catch(e) { threw = true; }
       console.assert(threw, 'formatMorse throws on unexpected char');
+      // pickDigit: all results in range 0-9
+      const poolResults = Array.from({length: 200}, () => pickDigit([]));
+      console.assert(poolResults.every(d => d >= 0 && d <= 9), 'pickDigit range');
+
+      // pickDigit: weak digit appears more often (2x weight, out of 12 total = ~16.7%)
+      const weakResults = Array.from({length: 500}, () => pickDigit([3]));
+      const countThree = weakResults.filter(d => d === 3).length;
+      console.assert(countThree > 55, 'weak digit 3 appears more often: ' + countThree);
+
+      // updateWeakDigits: < 50% correct → marked weak
+      const stats1 = Object.fromEntries(Array.from({length:10}, (_, i) => [i, {attempts:0, correct:0}]));
+      stats1[2] = {attempts: 4, correct: 1};
+      const w1 = updateWeakDigits(stats1, []);
+      console.assert(w1.includes(2), 'digit 2 should be weak (1/4 correct)');
+
+      // updateWeakDigits: >= 80% correct → removed from weak
+      const stats2 = Object.fromEntries(Array.from({length:10}, (_, i) => [i, {attempts:0, correct:0}]));
+      stats2[2] = {attempts: 5, correct: 4};
+      const w2 = updateWeakDigits(stats2, [2]);
+      console.assert(!w2.includes(2), 'digit 2 should no longer be weak (4/5 correct)');
+
+      // updateWeakDigits: 50-79% correct → keep existing status (neither add nor remove)
+      const stats3 = Object.fromEntries(Array.from({length:10}, (_, i) => [i, {attempts:0, correct:0}]));
+      stats3[5] = {attempts: 3, correct: 2}; // 67% — not weak, not removed
+      const w3a = updateWeakDigits(stats3, []);   // was not weak → stays not weak
+      const w3b = updateWeakDigits(stats3, [5]);  // was weak → stays weak
+      console.assert(!w3a.includes(5), 'digit 5 at 67%: not added when not already weak');
+      console.assert(w3b.includes(5), 'digit 5 at 67%: kept when already weak');
+
       console.log('Tests complete — check for assertion errors above');
     }
 
