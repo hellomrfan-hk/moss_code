@@ -4,48 +4,106 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Morse Code Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
   <style>
+    /* =========================================================
+       TOKENS — each theme redefines these
+       ========================================================= */
+    :root {
+      --bg: #f8f9fa;
+      --bg-accent: #f8f9fa;
+      --surface: #ffffff;
+      --surface-2: #f1f3f5;
+      --ink: #212529;
+      --ink-muted: #868e96;
+      --ink-soft: #495057;
+      --border: #dee2e6;
+      --accent: #4dabf7;
+      --accent-strong: #339af0;
+      --accent-ink: #ffffff;
+      --good: #d3f9d8;
+      --good-ink: #2b8a3e;
+      --bad: #ffe3e3;
+      --bad-ink: #c92a2a;
+      --warn: #fd7e14;
+      --danger: #ff6b6b;
+      --radius-card: 16px;
+      --radius-field: 10px;
+      --radius-chip: 12px;
+      --shadow-card: 0 2px 16px rgba(0,0,0,0.08);
+      --shadow-deep: 0 4px 24px rgba(0,0,0,0.10);
+      --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'Courier New', Courier, monospace;
+      --morse-letter-spacing: 8px;
+      --board-pattern: none;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f8f9fa;
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--ink);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: background 0.3s ease;
+      padding: 20px 0;
     }
 
     .screen { display: none; width: 100%; max-width: 480px; padding: 24px; }
     .screen.active { display: block; }
 
-    .setup-card {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    .setup-card, .results-card {
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
       padding: 32px;
+      border: 1px solid transparent;
     }
 
-    h1 { font-size: 1.6rem; color: #212529; margin-bottom: 4px; }
-    .subtitle { color: #868e96; margin-bottom: 20px; font-size: 0.95rem; }
+    .app-title-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+    .app-title-row .theme-icon { flex-shrink: 0; }
+    h1 {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .subtitle { color: var(--ink-muted); margin-bottom: 20px; font-size: 0.95rem; }
 
     .focus-banner {
-      background: #e7f5ff;
-      border: 1px solid #74c0fc;
-      border-radius: 8px;
+      background: color-mix(in oklab, var(--accent) 14%, transparent);
+      border: 1px solid color-mix(in oklab, var(--accent) 45%, transparent);
+      border-radius: var(--radius-field);
       padding: 10px 14px;
       margin-bottom: 16px;
       font-size: 0.9rem;
-      color: #1971c2;
+      color: var(--accent-strong);
     }
 
     fieldset {
-      border: 1px solid #dee2e6;
-      border-radius: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-field);
       padding: 14px 18px;
       margin-bottom: 16px;
     }
-    legend { font-weight: 600; color: #495057; padding: 0 6px; font-size: 0.9rem; }
+    legend {
+      font-weight: 600;
+      color: var(--ink-soft);
+      padding: 0 6px;
+      font-size: 0.9rem;
+      font-family: var(--font-display);
+    }
 
     fieldset label {
       display: flex;
@@ -54,23 +112,27 @@
       padding: 6px 0;
       cursor: pointer;
       font-size: 0.95rem;
-      color: #343a40;
+      color: var(--ink);
     }
-    .mode-desc { color: #868e96; font-size: 0.82rem; }
+    fieldset label input[type="radio"] { accent-color: var(--accent); }
+    .mode-desc { color: var(--ink-muted); font-size: 0.82rem; }
 
     .btn-primary {
       width: 100%;
       padding: 14px;
-      background: #4dabf7;
-      color: #fff;
+      background: var(--accent);
+      color: var(--accent-ink);
       border: none;
-      border-radius: 10px;
+      border-radius: var(--radius-field);
       font-size: 1.1rem;
-      font-weight: 600;
+      font-weight: 700;
+      font-family: var(--font-display);
       cursor: pointer;
-      transition: background 0.15s;
+      transition: transform 0.08s ease, background 0.15s ease, box-shadow 0.15s ease;
+      letter-spacing: 0.02em;
     }
-    .btn-primary:hover { background: #339af0; }
+    .btn-primary:hover { background: var(--accent-strong); }
+    .btn-primary:active { transform: translateY(1px); }
 
     .game-header {
       display: flex;
@@ -78,69 +140,89 @@
       align-items: center;
       margin-bottom: 20px;
       font-size: 1rem;
-      color: #495057;
+      color: var(--ink-soft);
+      font-family: var(--font-display);
     }
-    #timer-display { font-size: 1.4rem; font-weight: 700; color: #4dabf7; }
+    #timer-display {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+    #score-display { color: var(--ink); font-weight: 700; }
 
     .game-card {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      position: relative;
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
       padding: 40px 32px;
       text-align: center;
-      transition: background 0.15s;
+      transition: background 0.2s ease;
       margin-bottom: 20px;
-      min-height: 200px;
+      min-height: 240px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 16px;
+      overflow: hidden;
     }
-    .game-card.flash-correct { background: #d3f9d8; }
-    .game-card.flash-wrong   { background: #ffe3e3; }
+    .game-card.flash-correct { background: var(--good); }
+    .game-card.flash-wrong   { background: var(--bad); }
 
     .morse-label {
       font-size: 0.72rem;
       text-transform: uppercase;
       letter-spacing: 2px;
-      color: #adb5bd;
+      color: var(--ink-muted);
+      font-family: var(--font-display);
+      font-weight: 600;
     }
     .morse-display {
-      font-family: 'Courier New', Courier, monospace;
+      font-family: var(--font-mono);
       font-size: 2rem;
       font-weight: 700;
-      letter-spacing: 8px;
-      color: #212529;
+      letter-spacing: var(--morse-letter-spacing);
+      color: var(--ink);
       min-height: 2.5rem;
     }
     .input-box {
-      width: 60px; height: 60px;
-      border-radius: 12px;
-      background: #4dabf7;
-      color: #fff;
-      font-size: 1.8rem;
+      width: 64px; height: 64px;
+      border-radius: var(--radius-chip);
+      background: var(--accent);
+      color: var(--accent-ink);
+      font-size: 1.9rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-family: var(--font-display);
+      transition: transform 0.12s ease;
     }
+    .input-box.bump { transform: scale(1.08); }
 
     .progress-bar-track {
-      height: 8px;
-      background: #e9ecef;
-      border-radius: 4px;
+      height: 10px;
+      background: var(--surface-2);
+      border-radius: 5px;
       overflow: hidden;
+      border: 1px solid var(--border);
     }
     .progress-bar {
       height: 100%;
       width: 100%;
-      background: #4dabf7;
+      background: var(--accent);
       border-radius: 4px;
       transition: width 0.5s linear, background 0.5s;
     }
 
-    h2 { font-size: 1.3rem; color: #212529; margin-bottom: 20px; }
+    h2 {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      color: var(--ink);
+      margin-bottom: 20px;
+    }
 
     .results-table {
       width: 100%;
@@ -150,24 +232,565 @@
     }
     .results-table th, .results-table td {
       padding: 10px 12px;
-      border-bottom: 1px solid #dee2e6;
+      border-bottom: 1px solid var(--border);
       text-align: left;
     }
-    .results-table th { color: #868e96; font-weight: 600; font-size: 0.82rem; text-transform: uppercase; }
-    .morse-cell { font-family: 'Courier New', Courier, monospace; color: #495057; }
+    .results-table th {
+      color: var(--ink-muted);
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .morse-cell { font-family: var(--mono-cell-font, var(--font-mono)); color: var(--ink-soft); }
+
+    .theme-icon { display: inline-flex; }
 
     @media (max-width: 400px) {
       .screen { padding: 16px; }
-      .setup-card, .game-card { padding: 24px 18px; }
+      .setup-card, .game-card, .results-card { padding: 24px 18px; }
       .morse-display { font-size: 1.5rem; letter-spacing: 4px; }
     }
+
+    /* =========================================================
+       THEME: CHESS — wooden board, serif, tournament feel
+       ========================================================= */
+    body.theme-chess {
+      --bg: #2b1f14;
+      --bg-accent: #1a120a;
+      --surface: #f3e4c6;
+      --surface-2: #e6d2a8;
+      --ink: #1e1710;
+      --ink-muted: #6b5a3e;
+      --ink-soft: #3b2e1c;
+      --border: #b89968;
+      --accent: #7a5230;
+      --accent-strong: #5a3a1f;
+      --accent-ink: #f7ecd4;
+      --good: #d4e4b8;
+      --good-ink: #4a5d22;
+      --bad: #e8c9b8;
+      --bad-ink: #7a2e1f;
+      --warn: #b8732c;
+      --danger: #9a2a1e;
+      --radius-card: 4px;
+      --radius-field: 3px;
+      --radius-chip: 4px;
+      --shadow-card:
+        0 1px 0 #d6bf8f inset,
+        0 -1px 0 #8c6d3c inset,
+        0 10px 30px rgba(0,0,0,0.45),
+        0 2px 0 rgba(0,0,0,0.30);
+      --shadow-deep: 0 14px 40px rgba(0,0,0,0.55);
+      --font-display: 'Cormorant Garamond', 'Playfair Display', 'Hoefler Text', Garamond, serif;
+      --font-body: 'Cormorant Garamond', 'Playfair Display', Garamond, serif;
+      --font-mono: 'Cormorant Garamond', Garamond, serif;
+      --morse-letter-spacing: 14px;
+    }
+    body.theme-chess {
+      background:
+        radial-gradient(ellipse at 50% 0%, #3a2a1a 0%, #1a110a 60%, #0d0805 100%);
+    }
+    body.theme-chess::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0 2px, transparent 2px 4px),
+        repeating-linear-gradient(90deg, rgba(0,0,0,0.03) 0 1px, transparent 1px 3px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body.theme-chess .screen { position: relative; z-index: 1; }
+
+    body.theme-chess h1 {
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      font-variant: small-caps;
+      font-size: 1.9rem;
+      color: #2a1f12;
+    }
+    body.theme-chess .subtitle {
+      font-style: italic;
+      color: #6b5a3e;
+      font-size: 1.05rem;
+    }
+
+    body.theme-chess .setup-card,
+    body.theme-chess .results-card {
+      background:
+        linear-gradient(180deg, #f6e6c7 0%, #ecd6ac 100%);
+      border: 1px solid #a78654;
+      position: relative;
+    }
+    body.theme-chess .setup-card::before,
+    body.theme-chess .results-card::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border: 1px solid rgba(120, 90, 50, 0.35);
+      border-radius: 2px;
+      pointer-events: none;
+    }
+
+    body.theme-chess fieldset {
+      background: rgba(255,255,255,0.25);
+      border-color: #b89968;
+    }
+    body.theme-chess fieldset label input[type="radio"] { accent-color: #5a3a1f; }
+
+    body.theme-chess .btn-primary {
+      background: linear-gradient(180deg, #8f6437 0%, #5a3a1f 100%);
+      color: #f7ecd4;
+      border: 1px solid #3b2410;
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.15) inset,
+        0 -2px 0 rgba(0,0,0,0.25) inset,
+        0 2px 0 rgba(0,0,0,0.20);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.95rem;
+    }
+    body.theme-chess .btn-primary:hover {
+      background: linear-gradient(180deg, #a07545 0%, #6a451f 100%);
+    }
+
+    /* Chess game card = a tournament board set */
+    body.theme-chess #game-card {
+      padding: 28px 24px 32px;
+      background:
+        linear-gradient(180deg, #3d2a16 0%, #2a1c0d 100%);
+      border: 2px solid #1a110a;
+      box-shadow:
+        0 1px 0 #5a3d1e inset,
+        0 10px 30px rgba(0,0,0,0.50),
+        0 3px 0 rgba(0,0,0,0.3);
+    }
+    /* 8x8 chess board behind the morse */
+    body.theme-chess #game-card .chess-board-bg {
+      position: absolute;
+      inset: 14px;
+      border-radius: 2px;
+      overflow: hidden;
+      border: 2px solid #1a110a;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.4) inset;
+      opacity: 0.55;
+      background:
+        conic-gradient(#e8d3a4 25%, #8b5e34 25% 50%, #e8d3a4 50% 75%, #8b5e34 75%);
+      background-size: 25% 25%;
+      pointer-events: none;
+    }
+    body.theme-chess #game-card > * { position: relative; z-index: 1; }
+    body.theme-chess #game-card.flash-correct {
+      background: linear-gradient(180deg, #4e5c2a 0%, #2f3818 100%);
+    }
+    body.theme-chess #game-card.flash-wrong {
+      background: linear-gradient(180deg, #6b2818 0%, #3a140a 100%);
+    }
+
+    body.theme-chess .morse-label {
+      color: #e6d2a8;
+      letter-spacing: 0.25em;
+      font-variant: small-caps;
+      font-size: 0.85rem;
+    }
+    body.theme-chess .morse-display {
+      font-family: 'Cormorant Garamond', Garamond, serif;
+      color: #f7ecd4;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+      font-size: 2.4rem;
+    }
+    body.theme-chess .input-box {
+      background: radial-gradient(ellipse at 30% 25%, #fbefcf 0%, #c9a668 70%, #8e6a34 100%);
+      color: #1e1710;
+      border: 2px solid #1a110a;
+      box-shadow:
+        0 2px 0 rgba(0,0,0,0.4),
+        0 1px 0 rgba(255,255,255,0.4) inset;
+      font-family: 'Cormorant Garamond', Garamond, serif;
+      width: 72px; height: 72px;
+      font-size: 2.2rem;
+      font-weight: 700;
+    }
+
+    body.theme-chess .game-header {
+      color: #e6d2a8;
+      font-variant: small-caps;
+      letter-spacing: 0.08em;
+    }
+    body.theme-chess #timer-display {
+      color: #f7ecd4;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    body.theme-chess #score-display { color: #f7ecd4; }
+
+    body.theme-chess .progress-bar-track {
+      background: #1a110a;
+      border-color: #3b2410;
+      height: 8px;
+    }
+    body.theme-chess .progress-bar {
+      background: linear-gradient(180deg, #d6bf8f 0%, #a07545 100%);
+    }
+
+    body.theme-chess h2 {
+      font-variant: small-caps;
+      letter-spacing: 0.04em;
+      color: #2a1f12;
+      font-size: 1.7rem;
+    }
+    body.theme-chess .results-table th {
+      color: #6b5a3e;
+      font-variant: small-caps;
+      letter-spacing: 0.1em;
+    }
+    body.theme-chess .results-table td { color: #2a1f12; }
+    body.theme-chess .morse-cell { color: #5a3a1f; }
+    body.theme-chess .results-table th, body.theme-chess .results-table td {
+      border-bottom-color: #b89968;
+    }
+
+    /* =========================================================
+       THEME: MINECRAFT-ish — stylized blocky & green, cleaner
+       ========================================================= */
+    body.theme-craft {
+      --bg: #86b24a;
+      --bg-accent: #6a9438;
+      --surface: #f5f1e6;
+      --surface-2: #e3dcc4;
+      --ink: #1d1a14;
+      --ink-muted: #6b6552;
+      --ink-soft: #3a3528;
+      --border: #8a7e5c;
+      --accent: #3e8a3e;
+      --accent-strong: #2f6b30;
+      --accent-ink: #ffffff;
+      --good: #c3eab0;
+      --good-ink: #2f6b30;
+      --bad: #f2c7b8;
+      --bad-ink: #8a2f1e;
+      --warn: #e0932a;
+      --danger: #c63a2a;
+      --radius-card: 0px;
+      --radius-field: 0px;
+      --radius-chip: 0px;
+      --shadow-card:
+        0 0 0 3px #1d1a14,
+        6px 6px 0 #1d1a14;
+      --shadow-deep:
+        0 0 0 3px #1d1a14,
+        8px 8px 0 #1d1a14;
+      --font-display: 'Press Start 2P', ui-monospace, monospace;
+      --font-body: 'VT323', ui-monospace, monospace;
+      --font-mono: 'VT323', ui-monospace, monospace;
+      --morse-letter-spacing: 10px;
+    }
+    body.theme-craft {
+      background:
+        linear-gradient(180deg, #9cc8f0 0%, #bfe1ff 35%, #86b24a 35%, #6a9438 100%);
+      image-rendering: pixelated;
+    }
+    /* sky clouds */
+    body.theme-craft::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; height: 35vh;
+      background:
+        radial-gradient(ellipse 80px 30px at 15% 30%, #ffffff 0%, #ffffff 40%, transparent 42%),
+        radial-gradient(ellipse 110px 36px at 45% 55%, #ffffff 0%, #ffffff 40%, transparent 42%),
+        radial-gradient(ellipse 70px 26px at 78% 22%, #ffffff 0%, #ffffff 40%, transparent 42%),
+        radial-gradient(ellipse 90px 32px at 92% 70%, #ffffff 0%, #ffffff 40%, transparent 42%);
+      opacity: 0.85;
+      pointer-events: none;
+      z-index: 0;
+    }
+    /* grass band with pixel dirt below is already on body; add a dirt strip at bottom */
+    body.theme-craft::after {
+      content: '';
+      position: fixed;
+      left: 0; right: 0; bottom: 0; height: 28vh;
+      background:
+        /* dirt texture: stripes of brown */
+        linear-gradient(180deg, transparent 0, transparent 10%, #7a5a36 10%, #6a4a2a 100%);
+      background-size: 100% 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body.theme-craft .screen { position: relative; z-index: 1; }
+
+    body.theme-craft h1 {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 1.1rem;
+      color: #1d1a14;
+      text-shadow: 2px 2px 0 rgba(255,255,255,0.4);
+      line-height: 1.3;
+    }
+    body.theme-craft .subtitle {
+      font-family: 'VT323', monospace;
+      font-size: 1.2rem;
+      color: #3a3528;
+    }
+
+    body.theme-craft .setup-card,
+    body.theme-craft .results-card {
+      background:
+        /* subtle pixel noise */
+        repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0 2px, transparent 2px 4px),
+        linear-gradient(180deg, #f5f1e6 0%, #e3dcc4 100%);
+      border: 3px solid #1d1a14;
+      border-radius: 0;
+      box-shadow: 6px 6px 0 #1d1a14;
+    }
+
+    body.theme-craft fieldset {
+      border: 2px solid #1d1a14;
+      background: #f5f1e6;
+      font-family: 'VT323', monospace;
+    }
+    body.theme-craft legend {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.7rem;
+      color: #1d1a14;
+      background: #c4b685;
+      padding: 4px 8px;
+      border: 2px solid #1d1a14;
+    }
+    body.theme-craft fieldset label {
+      font-family: 'VT323', monospace;
+      font-size: 1.15rem;
+    }
+    body.theme-craft .mode-desc { font-family: 'VT323', monospace; font-size: 1.05rem; }
+    body.theme-craft fieldset label input[type="radio"] { accent-color: #3e8a3e; transform: scale(1.1); }
+
+    body.theme-craft .btn-primary {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.85rem;
+      background:
+        linear-gradient(180deg, #5cb85c 0%, #3e8a3e 50%, #2f6b30 50%, #3e8a3e 100%);
+      color: #ffffff;
+      border: 3px solid #1d1a14;
+      border-radius: 0;
+      box-shadow: 4px 4px 0 #1d1a14;
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+      padding: 16px;
+      letter-spacing: 0.04em;
+    }
+    body.theme-craft .btn-primary:hover {
+      background: linear-gradient(180deg, #6cc86c 0%, #4e9a4e 50%, #3f7b40 50%, #4e9a4e 100%);
+    }
+    body.theme-craft .btn-primary:active {
+      transform: translate(3px, 3px);
+      box-shadow: 1px 1px 0 #1d1a14;
+    }
+
+    body.theme-craft .focus-banner {
+      background: #fff0a8;
+      border: 2px solid #1d1a14;
+      color: #5a4a10;
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+      border-radius: 0;
+    }
+
+    body.theme-craft #game-card {
+      background:
+        /* faint cloud in sky */
+        radial-gradient(ellipse 120px 30px at 80% 20%, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.6) 40%, transparent 42%),
+        linear-gradient(180deg, #bfe1ff 0%, #9cc8f0 55%, #86b24a 55%, #5f8a2e 100%);
+      border: 3px solid #1d1a14;
+      border-radius: 0;
+      box-shadow: 6px 6px 0 #1d1a14;
+      padding: 32px 24px;
+      min-height: 280px;
+    }
+    body.theme-craft #game-card.flash-correct {
+      background: linear-gradient(180deg, #c3eab0 0%, #86b24a 100%);
+    }
+    body.theme-craft #game-card.flash-wrong {
+      background: linear-gradient(180deg, #f2c7b8 0%, #c63a2a 100%);
+    }
+
+    body.theme-craft .morse-label {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.6rem;
+      color: #1d1a14;
+      background: #fff0a8;
+      padding: 4px 8px;
+      border: 2px solid #1d1a14;
+      letter-spacing: 0.1em;
+    }
+
+    /* Morse blocks - dots and dashes rendered as floating blocks */
+    body.theme-craft .morse-display {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      font-size: 0;
+      letter-spacing: 0;
+      min-height: 56px;
+    }
+    body.theme-craft .morse-block {
+      display: inline-block;
+      height: 40px;
+      border: 3px solid #1d1a14;
+      box-shadow:
+        inset 0 -6px 0 rgba(0,0,0,0.25),
+        inset 0 6px 0 rgba(255,255,255,0.15),
+        3px 3px 0 rgba(0,0,0,0.3);
+      animation: blockPop 0.25s ease-out;
+    }
+    body.theme-craft .morse-block.dot {
+      width: 40px;
+      background: linear-gradient(135deg, #e8b76a 0%, #b8863a 100%);
+    }
+    body.theme-craft .morse-block.dash {
+      width: 92px;
+      background: linear-gradient(135deg, #8b5e34 0%, #6a4424 100%);
+    }
+    @keyframes blockPop {
+      0% { transform: translateY(-12px) scale(0.8); opacity: 0; }
+      60% { transform: translateY(2px) scale(1.04); opacity: 1; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    body.theme-craft .input-box {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 1.6rem;
+      background: linear-gradient(180deg, #c4b685 0%, #a8995f 50%, #8a7e4a 50%, #a8995f 100%);
+      color: #1d1a14;
+      border: 3px solid #1d1a14;
+      border-radius: 0;
+      box-shadow:
+        inset 0 -4px 0 rgba(0,0,0,0.2),
+        inset 0 4px 0 rgba(255,255,255,0.25),
+        3px 3px 0 rgba(0,0,0,0.3);
+      width: 72px; height: 72px;
+    }
+
+    body.theme-craft .game-header {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.75rem;
+      color: #1d1a14;
+    }
+    body.theme-craft #timer-display {
+      font-family: 'Press Start 2P', monospace;
+      color: #ffffff;
+      background: #1d1a14;
+      padding: 6px 10px;
+      border: 2px solid #1d1a14;
+      font-size: 1rem;
+    }
+    body.theme-craft #score-display { color: #1d1a14; }
+
+    body.theme-craft .progress-bar-track {
+      height: 14px;
+      background: #1d1a14;
+      border: 2px solid #1d1a14;
+      border-radius: 0;
+    }
+    body.theme-craft .progress-bar {
+      background:
+        repeating-linear-gradient(90deg, #5cb85c 0 8px, #3e8a3e 8px 16px);
+      border-radius: 0;
+    }
+
+    body.theme-craft h2 {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: #1d1a14;
+    }
+    body.theme-craft .results-table th {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.6rem;
+      color: #3a3528;
+    }
+    body.theme-craft .results-table td {
+      font-family: 'VT323', monospace;
+      font-size: 1.15rem;
+      color: #1d1a14;
+    }
+    body.theme-craft .morse-cell { font-family: 'VT323', monospace; color: #3a3528; }
+    body.theme-craft .results-table th,
+    body.theme-craft .results-table td {
+      border-bottom: 2px solid #8a7e5c;
+    }
+
+    /* =========================================================
+       TWEAKS PANEL
+       ========================================================= */
+    #tweaks-panel {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #1d1a14;
+      color: #ffffff;
+      padding: 16px 18px;
+      border-radius: 10px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      z-index: 9999;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 0.85rem;
+      display: none;
+      min-width: 200px;
+    }
+    #tweaks-panel.visible { display: block; }
+    #tweaks-panel .tw-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #9aa0a6;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    #tweaks-panel .tw-options {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    #tweaks-panel .tw-opt {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid transparent;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    #tweaks-panel .tw-opt:hover { background: rgba(255,255,255,0.10); }
+    #tweaks-panel .tw-opt.active {
+      background: rgba(77, 171, 247, 0.18);
+      border-color: #4dabf7;
+    }
+    #tweaks-panel .tw-swatch {
+      width: 24px; height: 24px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    #tweaks-panel .tw-sw-default { background: linear-gradient(135deg, #4dabf7 0%, #fff 100%); }
+    #tweaks-panel .tw-sw-chess   { background: linear-gradient(135deg, #8b5e34 50%, #f3e4c6 50%); }
+    #tweaks-panel .tw-sw-craft   { background: linear-gradient(135deg, #86b24a 50%, #7a5a36 50%); }
+    #tweaks-panel .tw-label { font-weight: 600; color: #ffffff; }
+    #tweaks-panel .tw-sub { font-size: 0.72rem; color: #9aa0a6; }
+    #tweaks-panel .tw-opt-text { display: flex; flex-direction: column; }
   </style>
 </head>
-<body>
+<body class="theme-default">
+
+  <!-- ================= SETUP ================= -->
   <div id="screen-setup" class="screen active">
     <div class="setup-card">
-      <h1>Morse Code Game</h1>
-      <p class="subtitle">Translate Morse code into digits 0–9</p>
+      <div class="app-title-row">
+        <span id="title-icon" class="theme-icon"></span>
+        <h1 id="app-title">Morse Code Game</h1>
+      </div>
+      <p class="subtitle" id="app-subtitle">Translate Morse code into digits 0–9</p>
 
       <div id="practice-focus" class="focus-banner" style="display:none"></div>
 
@@ -194,6 +817,7 @@
     </div>
   </div>
 
+  <!-- ================= GAME ================= -->
   <div id="screen-game" class="screen">
     <div class="game-header">
       <span id="timer-display">60s</span>
@@ -201,7 +825,8 @@
     </div>
 
     <div id="game-card" class="game-card">
-      <div class="morse-label">Morse Code</div>
+      <div class="chess-board-bg" aria-hidden="true"></div>
+      <div class="morse-label" id="morse-label-el">Morse Code</div>
       <div id="morse-display" class="morse-display">— — — — —</div>
       <div id="input-box" class="input-box">_</div>
     </div>
@@ -211,8 +836,9 @@
     </div>
   </div>
 
+  <!-- ================= RESULTS ================= -->
   <div id="screen-results" class="screen">
-    <div class="setup-card">
+    <div class="results-card">
       <h2 id="result-headline">12 correct out of 18 attempts</h2>
 
       <table class="results-table">
@@ -226,13 +852,144 @@
     </div>
   </div>
 
+  <!-- ================= TWEAKS PANEL ================= -->
+  <div id="tweaks-panel">
+    <div class="tw-title">Theme</div>
+    <div class="tw-options">
+      <div class="tw-opt" data-theme="default">
+        <div class="tw-swatch tw-sw-default"></div>
+        <div class="tw-opt-text">
+          <span class="tw-label">Default</span>
+          <span class="tw-sub">Clean & friendly</span>
+        </div>
+      </div>
+      <div class="tw-opt" data-theme="chess">
+        <div class="tw-swatch tw-sw-chess"></div>
+        <div class="tw-opt-text">
+          <span class="tw-label">Chess</span>
+          <span class="tw-sub">Tournament wood</span>
+        </div>
+      </div>
+      <div class="tw-opt" data-theme="craft">
+        <div class="tw-swatch tw-sw-craft"></div>
+        <div class="tw-opt-text">
+          <span class="tw-label">Blockcraft</span>
+          <span class="tw-sub">Stylized blocks</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
+    // =========================================================
+    // THEME SYSTEM
+    // =========================================================
+    const TWEAK_DEFAULS = /*EDITMODE-BEGIN*/{
+      "theme": "default"
+    }/*EDITMODE-END*/;
+
+    const THEME_COPY = {
+      default: {
+        title: 'Morse Code Game',
+        subtitle: 'Translate Morse code into digits 0–9',
+        cta: 'Start',
+        playAgain: 'Play Again',
+        morseLabel: 'Morse Code'
+      },
+      chess: {
+        title: 'The Cipher Gambit',
+        subtitle: 'A dispatch in dots and dashes — decipher each digit.',
+        cta: 'Begin Match',
+        playAgain: 'Rematch',
+        morseLabel: 'Dispatch'
+      },
+      craft: {
+        title: 'Block Morse',
+        subtitle: 'Mine the code. Type the digit before night falls.',
+        cta: 'Play',
+        playAgain: 'Play Again',
+        morseLabel: 'Signal'
+      }
+    };
+
+    function applyTheme(theme) {
+      const body = document.body;
+      body.classList.remove('theme-default', 'theme-chess', 'theme-craft');
+      body.classList.add('theme-' + theme);
+
+      const copy = THEME_COPY[theme] || THEME_COPY.default;
+      document.getElementById('app-title').textContent = copy.title;
+      document.getElementById('app-subtitle').textContent = copy.subtitle;
+      document.getElementById('start-btn').textContent = copy.cta;
+      document.getElementById('play-again-btn').textContent = copy.playAgain;
+      document.getElementById('morse-label-el').textContent = copy.morseLabel;
+
+      // Re-render morse display in current theme form if game running
+      if (gameState && gameState.currentDigit != null) {
+        const raw = MORSE[String(gameState.currentDigit)];
+        const display = document.getElementById('morse-display');
+        // In advanced mid-animation, don't clobber — just leave
+        if (gameState.inputEnabled || gameState.mode === 'beginner') {
+          renderMorse(display, raw);
+        }
+      }
+
+      // update active marker
+      document.querySelectorAll('#tweaks-panel .tw-opt').forEach(el => {
+        el.classList.toggle('active', el.dataset.theme === theme);
+      });
+
+      TWEAK_DEFAULS.theme = theme;
+    }
+
+    function currentTheme() {
+      if (document.body.classList.contains('theme-chess')) return 'chess';
+      if (document.body.classList.contains('theme-craft')) return 'craft';
+      return 'default';
+    }
+
+    // Renders raw morse string into `el` using the appropriate presentation for current theme
+    function renderMorse(el, raw) {
+      const theme = currentTheme();
+      if (theme === 'craft') {
+        el.innerHTML = '';
+        raw.split('').forEach((sym, i) => {
+          const b = document.createElement('span');
+          b.className = 'morse-block ' + (sym === '.' ? 'dot' : 'dash');
+          b.style.animationDelay = (i * 40) + 'ms';
+          el.appendChild(b);
+        });
+      } else {
+        el.textContent = formatMorse(raw);
+      }
+    }
+
+    // Advanced-mode progressive reveal: show symbols up to index `upto`
+    function renderMorseUpto(el, raw, upto) {
+      const theme = currentTheme();
+      if (theme === 'craft') {
+        el.innerHTML = '';
+        raw.split('').slice(0, upto + 1).forEach((sym, i) => {
+          const b = document.createElement('span');
+          b.className = 'morse-block ' + (sym === '.' ? 'dot' : 'dash');
+          el.appendChild(b);
+        });
+      } else {
+        el.textContent = raw.split('').slice(0, upto + 1)
+          .map(s => s === '.' ? '•' : '—')
+          .join(' ');
+      }
+    }
+
+    // =========================================================
+    // ORIGINAL GAME LOGIC (preserved)
+    // =========================================================
+
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById('screen-' + id).classList.add('active');
     }
 
-    // === MORSE DATA ===
     const MORSE = {
       '0': '-----', '1': '.----', '2': '..---', '3': '...--', '4': '....-',
       '5': '.....', '6': '-....', '7': '--...', '8': '---..',  '9': '----.'
@@ -246,16 +1003,13 @@
       }).join(' ');
     }
 
-    // === AUDIO ENGINE ===
+    // --- AUDIO ---
     let audioCtx = null;
-
     function getAudioCtx() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
       return audioCtx;
     }
 
@@ -274,9 +1028,6 @@
       return osc;
     }
 
-    // Plays raw morse string (e.g. '..---').
-    // Calls onSymbol(index) at the moment each symbol plays.
-    // Returns { cancel(), durationMs } — call cancel() to stop audio and clear pending callbacks.
     function scheduleMorse(raw, onSymbol) {
       const ctx = getAudioCtx();
       const DOT_SEC = 0.1, DASH_SEC = 0.3, GAP_SEC = 0.1;
@@ -290,9 +1041,7 @@
         const durSec = sym === '.' ? DOT_SEC : DASH_SEC;
         const osc = scheduleBeep(ctx, t, durSec);
         oscillators.push(osc);
-        if (onSymbol) {
-          timers.push(setTimeout(() => onSymbol(i), elapsedMs));
-        }
+        if (onSymbol) timers.push(setTimeout(() => onSymbol(i), elapsedMs));
         elapsedMs += (durSec + GAP_SEC) * 1000;
         t += durSec + GAP_SEC;
       });
@@ -306,7 +1055,7 @@
       };
     }
 
-    // === SETUP ===
+    // --- SETUP ---
     function loadWeakDigits() {
       try {
         return JSON.parse(localStorage.getItem('morseWeakDigits') || '{}').weakDigits || [];
@@ -331,7 +1080,7 @@
       const pool = [];
       for (let d = 0; d <= 9; d++) {
         pool.push(d);
-        if (weakDigits.includes(d)) pool.push(d); // 2x weight for weak digits
+        if (weakDigits.includes(d)) pool.push(d);
       }
       return pool[Math.floor(Math.random() * pool.length)];
     }
@@ -342,9 +1091,8 @@
         if (stats.attempts === 0) continue;
         const d = parseInt(digit, 10);
         const ratio = stats.correct / stats.attempts;
-        if (ratio < 0.5)       newWeak.add(d);
+        if (ratio < 0.5) newWeak.add(d);
         else if (ratio >= 0.8) newWeak.delete(d);
-        // 0.5–0.79: keep existing status (no change)
       }
       return [...newWeak];
     }
@@ -363,7 +1111,7 @@
     document.getElementById('start-btn').addEventListener('click', () => {
       const seconds = parseInt(document.querySelector('input[name="timer"]:checked').value, 10);
       const mode = document.querySelector('input[name="mode"]:checked').value;
-      startGame(seconds, mode); // defined in Task 5
+      startGame(seconds, mode);
     });
 
     document.addEventListener('keydown', e => {
@@ -379,18 +1127,14 @@
 
     initSetup();
 
-    // === GAME STATE ===
+    // --- GAME ---
     let gameState = null;
 
     function startGame(seconds, mode) {
-      if (gameState && gameState.timerInterval) {
-        clearInterval(gameState.timerInterval);
-      }
+      if (gameState && gameState.timerInterval) clearInterval(gameState.timerInterval);
       const weakDigits = loadWeakDigits();
       gameState = {
-        seconds,
-        mode,
-        weakDigits,
+        seconds, mode, weakDigits,
         timeLeft: seconds,
         score: 0,
         attempts: 0,
@@ -404,7 +1148,7 @@
 
       document.getElementById('score-display').textContent = '0';
       showScreen('game');
-      loadNextDigit();    // defined in Task 6
+      loadNextDigit();
       startTimer();
     }
 
@@ -415,7 +1159,7 @@
         updateTimerDisplay();
         if (gameState.timeLeft <= 0) {
           clearInterval(gameState.timerInterval);
-          endGame();      // defined in Task 7
+          endGame();
         }
       }, 1000);
     }
@@ -425,16 +1169,28 @@
       const pct = gameState.timeLeft / gameState.seconds;
       const bar = document.getElementById('progress-bar');
       bar.style.width = (pct * 100) + '%';
-      if (pct > 0.5)       bar.style.background = '#4dabf7';
-      else if (pct > 0.25) bar.style.background = '#fd7e14';
-      else                 bar.style.background = '#ff6b6b';
+
+      // Theme-aware progress colors
+      const theme = currentTheme();
+      if (theme === 'chess') {
+        if (pct > 0.5) bar.style.background = 'linear-gradient(180deg, #d6bf8f 0%, #a07545 100%)';
+        else if (pct > 0.25) bar.style.background = 'linear-gradient(180deg, #e0a060 0%, #b8732c 100%)';
+        else bar.style.background = 'linear-gradient(180deg, #d95e45 0%, #9a2a1e 100%)';
+      } else if (theme === 'craft') {
+        if (pct > 0.5) bar.style.background = 'repeating-linear-gradient(90deg, #5cb85c 0 8px, #3e8a3e 8px 16px)';
+        else if (pct > 0.25) bar.style.background = 'repeating-linear-gradient(90deg, #e0932a 0 8px, #b8732c 8px 16px)';
+        else bar.style.background = 'repeating-linear-gradient(90deg, #e85a48 0 8px, #c63a2a 8px 16px)';
+      } else {
+        if (pct > 0.5) bar.style.background = '#4dabf7';
+        else if (pct > 0.25) bar.style.background = '#fd7e14';
+        else bar.style.background = '#ff6b6b';
+      }
     }
 
-    let currentMorse = null; // tracks in-flight scheduleMorse handle for cancellation
-    let flashTimeout = null; // tracks handleAnswer's flash setTimeout for cancellation
+    let currentMorse = null;
+    let flashTimeout = null;
 
     function endGame() {
-      // Clean up in-flight state
       if (flashTimeout) { clearTimeout(flashTimeout); flashTimeout = null; }
       if (currentMorse) { currentMorse.cancel(); currentMorse = null; }
       gameState.inputEnabled = false;
@@ -464,10 +1220,7 @@
     }
 
     function loadNextDigit() {
-      if (currentMorse) {
-        currentMorse.cancel();
-        currentMorse = null;
-      }
+      if (currentMorse) { currentMorse.cancel(); currentMorse = null; }
 
       const digit = pickDigit(gameState.weakDigits);
       gameState.currentDigit = digit;
@@ -475,25 +1228,19 @@
 
       const raw = MORSE[String(digit)];
       document.getElementById('input-box').textContent = '_';
-      document.getElementById('morse-display').textContent = '';
+      const display = document.getElementById('morse-display');
+      display.innerHTML = '';
+      display.textContent = '';
 
       if (gameState.mode === 'beginner') {
-        document.getElementById('morse-display').textContent = formatMorse(raw);
+        renderMorse(display, raw);
         currentMorse = scheduleMorse(raw, null);
         gameState.inputEnabled = true;
       } else {
-        // Advanced: animate symbols one by one in sync with audio
         const symbols = raw.split('');
-        const display = document.getElementById('morse-display');
-
         currentMorse = scheduleMorse(raw, index => {
-          display.textContent = symbols
-            .slice(0, index + 1)
-            .map(s => s === '.' ? '•' : '—')
-            .join(' ');
-          if (index === symbols.length - 1) {
-            gameState.inputEnabled = true;
-          }
+          renderMorseUpto(display, raw, index);
+          if (index === symbols.length - 1) gameState.inputEnabled = true;
         });
       }
     }
@@ -503,7 +1250,11 @@
       gameState.inputEnabled = false;
 
       const correct = pressedDigit === gameState.currentDigit;
-      document.getElementById('input-box').textContent = String(pressedDigit);
+      const inputBox = document.getElementById('input-box');
+      inputBox.textContent = String(pressedDigit);
+      inputBox.classList.add('bump');
+      setTimeout(() => inputBox.classList.remove('bump'), 140);
+
       gameState.attempts++;
       gameState.sessionStats[gameState.currentDigit].attempts++;
 
@@ -525,6 +1276,47 @@
       }, 400);
     }
 
+    // =========================================================
+    // TWEAKS WIRING
+    // =========================================================
+    (function wireTweaks() {
+      const panel = document.getElementById('tweaks-panel');
+
+      // Register listener FIRST, then announce
+      window.addEventListener('message', (event) => {
+        const msg = event.data;
+        if (!msg || typeof msg !== 'object') return;
+        if (msg.type === '__activate_edit_mode') {
+          panel.classList.add('visible');
+        } else if (msg.type === '__deactivate_edit_mode') {
+          panel.classList.remove('visible');
+        } else if (msg.type === '__edit_mode_set_keys_ack') {
+          // no-op
+        }
+      });
+
+      // Wire option clicks
+      document.querySelectorAll('#tweaks-panel .tw-opt').forEach(el => {
+        el.addEventListener('click', () => {
+          const theme = el.dataset.theme;
+          applyTheme(theme);
+          try {
+            window.parent.postMessage({
+              type: '__edit_mode_set_keys',
+              edits: { theme }
+            }, '*');
+          } catch (e) {}
+        });
+      });
+
+      // Apply initial theme from TWEAK_DEFAULS
+      applyTheme(TWEAK_DEFAULS.theme || 'default');
+
+      // Announce availability
+      try {
+        window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+      } catch (e) {}
+    })();
   </script>
 </body>
 </html>
