@@ -18,12 +18,90 @@
 
     .screen { display: none; width: 100%; max-width: 480px; padding: 24px; }
     .screen.active { display: block; }
+
+    .setup-card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      padding: 32px;
+    }
+
+    h1 { font-size: 1.6rem; color: #212529; margin-bottom: 4px; }
+    .subtitle { color: #868e96; margin-bottom: 20px; font-size: 0.95rem; }
+
+    .focus-banner {
+      background: #e7f5ff;
+      border: 1px solid #74c0fc;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      color: #1971c2;
+    }
+
+    fieldset {
+      border: 1px solid #dee2e6;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+    }
+    legend { font-weight: 600; color: #495057; padding: 0 6px; font-size: 0.9rem; }
+
+    fieldset label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      cursor: pointer;
+      font-size: 0.95rem;
+      color: #343a40;
+    }
+    .mode-desc { color: #868e96; font-size: 0.82rem; }
+
+    button#start-btn {
+      width: 100%;
+      padding: 14px;
+      background: #4dabf7;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button#start-btn:hover { background: #339af0; }
   </style>
 </head>
 <body>
   <div id="screen-setup" class="screen active">
-    <h1>Morse Code Game</h1>
-    <p>Setup screen placeholder</p>
+    <div class="setup-card">
+      <h1>Morse Code Game</h1>
+      <p class="subtitle">Translate Morse code into digits 0–9</p>
+
+      <div id="practice-focus" class="focus-banner" style="display:none"></div>
+
+      <fieldset>
+        <legend>Timer</legend>
+        <label><input type="radio" name="timer" value="15"> 15 seconds</label>
+        <label><input type="radio" name="timer" value="45"> 45 seconds</label>
+        <label><input type="radio" name="timer" value="60" checked> 60 seconds</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Mode</legend>
+        <label>
+          <input type="radio" name="mode" value="beginner" checked> Beginner
+          <span class="mode-desc">Full pattern shown instantly</span>
+        </label>
+        <label>
+          <input type="radio" name="mode" value="advanced"> Advanced
+          <span class="mode-desc">Pattern animates with audio</span>
+        </label>
+      </fieldset>
+
+      <button id="start-btn">Start</button>
+    </div>
   </div>
 
   <div id="screen-game" class="screen">
@@ -103,6 +181,39 @@
 
       return elapsedMs;
     }
+
+    // === SETUP ===
+    function loadWeakDigits() {
+      try {
+        return JSON.parse(localStorage.getItem('morseWeakDigits') || '{}').weakDigits || [];
+      } catch { return []; }
+    }
+
+    function saveWeakDigits(weakDigits) {
+      localStorage.setItem('morseWeakDigits', JSON.stringify({
+        weakDigits,
+        lastUpdated: new Date().toISOString().slice(0, 10)
+      }));
+    }
+
+    function initSetup() {
+      const weak = loadWeakDigits();
+      const el = document.getElementById('practice-focus');
+      if (weak.length > 0) {
+        el.textContent = 'Practice focus: ' + weak.join(', ');
+        el.style.display = 'block';
+      } else {
+        el.style.display = 'none';
+      }
+    }
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+      const seconds = parseInt(document.querySelector('input[name="timer"]:checked').value);
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+      startGame(seconds, mode); // defined in Task 5
+    });
+
+    initSetup();
 
     // --- TESTS (remove before shipping) ---
     function runTests() {
