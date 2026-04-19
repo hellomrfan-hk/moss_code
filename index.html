@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Morse Code Game</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f8f9fa;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screen { display: none; width: 100%; max-width: 480px; padding: 24px; }
+    .screen.active { display: block; }
+  </style>
+</head>
+<body>
+  <div id="screen-setup" class="screen active">
+    <h1>Morse Code Game</h1>
+    <p>Setup screen placeholder</p>
+  </div>
+
+  <div id="screen-game" class="screen">
+    <p>Game screen placeholder</p>
+  </div>
+
+  <div id="screen-results" class="screen">
+    <p>Results screen placeholder</p>
+  </div>
+
+  <script>
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + id).classList.add('active');
+    }
+  </script>
+</body>
+</html>
