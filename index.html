@@ -461,10 +461,13 @@
         const pct = s.correct / s.attempts;
         const icon = pct === 1 ? '✓' : pct === 0 ? '✗' : '~';
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${d}</td><td class="morse-cell">${MORSE[d]}</td><td>${s.correct}/${s.attempts} ${icon}</td>`;
+        const tdDigit = tr.insertCell(); tdDigit.textContent = d;
+        const tdMorse = tr.insertCell(); tdMorse.className = 'morse-cell'; tdMorse.textContent = MORSE[d];
+        const tdResult = tr.insertCell(); tdResult.textContent = `${s.correct}/${s.attempts} ${icon}`;
         tbody.appendChild(tr);
       }
 
+      gameState = null;
       showScreen('results');
     }
 
