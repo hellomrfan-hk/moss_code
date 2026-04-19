@@ -72,6 +72,9 @@
       console.assert(MORSE['8'] === '---..',  'MORSE[8]');
       console.assert(MORSE['9'] === '----.', 'MORSE[9]');
       console.assert(formatMorse(MORSE['2']) === '• • — — —', 'MORSE[2] round-trips');
+      let threw = false;
+      try { formatMorse('x'); } catch(e) { threw = true; }
+      console.assert(threw, 'formatMorse throws on unexpected char');
       console.log('Tests complete — check for assertion errors above');
     }
 
