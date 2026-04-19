@@ -71,6 +71,74 @@
       transition: background 0.15s;
     }
     button#start-btn:hover { background: #339af0; }
+
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      font-size: 1rem;
+      color: #495057;
+    }
+    #timer-display { font-size: 1.4rem; font-weight: 700; color: #4dabf7; }
+
+    .game-card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      padding: 40px 32px;
+      text-align: center;
+      transition: background 0.15s;
+      margin-bottom: 20px;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .game-card.flash-correct { background: #d3f9d8; }
+    .game-card.flash-wrong   { background: #ffe3e3; }
+
+    .morse-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #adb5bd;
+    }
+    .morse-display {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 8px;
+      color: #212529;
+      min-height: 2.5rem;
+    }
+    .input-box {
+      width: 60px; height: 60px;
+      border-radius: 12px;
+      background: #4dabf7;
+      color: #fff;
+      font-size: 1.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .progress-bar-track {
+      height: 8px;
+      background: #e9ecef;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 100%;
+      background: #4dabf7;
+      border-radius: 4px;
+      transition: width 0.5s linear, background 0.5s;
+    }
   </style>
 </head>
 <body>
@@ -105,7 +173,20 @@
   </div>
 
   <div id="screen-game" class="screen">
-    <p>Game screen placeholder</p>
+    <div class="game-header">
+      <span id="timer-display">60s</span>
+      <span id="score-display-label">Correct: <strong id="score-display">0</strong></span>
+    </div>
+
+    <div id="game-card" class="game-card">
+      <div class="morse-label">Morse Code</div>
+      <div id="morse-display" class="morse-display">— — — — —</div>
+      <div id="input-box" class="input-box">_</div>
+    </div>
+
+    <div class="progress-bar-track">
+      <div id="progress-bar" class="progress-bar"></div>
+    </div>
   </div>
 
   <div id="screen-results" class="screen">
@@ -221,6 +302,60 @@
     });
 
     initSetup();
+
+    // === GAME STATE ===
+    let gameState = null;
+
+    function startGame(seconds, mode) {
+      const weakDigits = loadWeakDigits();
+      gameState = {
+        seconds,
+        mode,
+        weakDigits,
+        timeLeft: seconds,
+        score: 0,
+        attempts: 0,
+        sessionStats: Object.fromEntries(
+          Array.from({length: 10}, (_, i) => [i, {attempts: 0, correct: 0}])
+        ),
+        currentDigit: null,
+        inputEnabled: false,
+        timerInterval: null
+      };
+
+      document.getElementById('score-display').textContent = '0';
+      showScreen('game');
+      loadNextDigit();    // defined in Task 6
+      startTimer();
+    }
+
+    function startTimer() {
+      updateTimerDisplay();
+      gameState.timerInterval = setInterval(() => {
+        gameState.timeLeft--;
+        updateTimerDisplay();
+        if (gameState.timeLeft <= 0) {
+          clearInterval(gameState.timerInterval);
+          endGame();      // defined in Task 7
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      document.getElementById('timer-display').textContent = gameState.timeLeft + 's';
+      const pct = gameState.timeLeft / gameState.seconds;
+      const bar = document.getElementById('progress-bar');
+      bar.style.width = (pct * 100) + '%';
+      if (pct > 0.5)       bar.style.background = '#4dabf7';
+      else if (pct > 0.25) bar.style.background = '#fd7e14';
+      else                 bar.style.background = '#ff6b6b';
+    }
+
+    function loadNextDigit() {
+      // stub — replaced in Task 6
+      document.getElementById('morse-display').textContent = '• • — — —';
+      gameState.inputEnabled = true;
+    }
 
     // --- TESTS (remove before shipping) ---
     function runTests() {
